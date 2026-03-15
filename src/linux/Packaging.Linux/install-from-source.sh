@@ -220,14 +220,26 @@ case "$distribution" in
 
         ensure_dotnet_installed
     ;;
-    arch)
+    arch | cachyos)
         print_unsupported_distro "WARNING" "$distribution"
 
         # --noconfirm required when running from container
         $sudo_cmd pacman -Syu --noconfirm
 
+		# Check if zlib or zlib-ng-compat isn't already installed
+		if pacman -Qq zlib-ng-compat >/dev/null 2>&1; then
+            # zlib-ng-compat is already here, don't let the script reinstall standard zlib
+            zlib_pkg="zlib-ng-compat"
+        elif pacman -Qq zlib >/dev/null 2>&1; then
+            # standard zlib is already here
+            zlib_pkg="zlib"
+        else
+            # Neither is found, default to zlib for the installation list
+            zlib_pkg="zlib"
+        fi
+
         # Install dotnet/GCM dependencies.
-        install_packages pacman -Sy "curl git glibc gcc krb5 icu openssl libc++ zlib"
+        install_packages pacman -Sy "curl git glibc gcc krb5 icu openssl libc++ $zlib_pkg"
 
         ensure_dotnet_installed
     ;;
